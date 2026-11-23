@@ -1,10 +1,23 @@
 # Function and Surface Grapher
 
-Plot functions of one variable in 2D and rotate surfaces of two variables in 3D with adjustable domains.
+Watch an equation become a curve or a color-shaded surface. Pan and zoom 2D plots, rotate 3D meshes, and adjust the bounds to see how the shape changes. Try built-in examples from reciprocal curves to radial ripples, or enter your own expressions. The browser app and the Electron desktop edition share the same JavaScript expression parser and HTML Canvas renderer.
 
 ![Running demo](docs/demo.webp)
 
 [Open the browser app](https://surfingcoder.com/apps/function-surface-grapher/)
+
+## Desktop edition
+
+The offline desktop edition runs from a local Electron window. [Download the Windows x64 ZIP](https://github.com/netcodermike/function-surface-grapher/releases/download/v1.0.0/FunctionAndSurfaceGrapher-win-x64.zip), extract it, and open `FunctionAndSurfaceGrapher.exe`. Keep the executable and its bundled files together.
+
+To run the desktop edition from source with Node.js 22.12 or newer and npm:
+
+    npm ci
+    npm start
+
+Rebuild the portable Windows x64 ZIP with Python 3.10 or newer:
+
+    python scripts/package-windows.py --output-dir dist
 
 ## Run locally
 
