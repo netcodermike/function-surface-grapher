@@ -21,3 +21,12 @@ test('sampling keeps undefined points as gaps and validates domains', () => {
   assert.equal(rows[2][2].z,1);
   assert.throws(()=>validateDomain(1,1,-2,2));
 });
+
+test('accepts decimal bounds exactly the advertised minimum apart', () => {
+  for (const [min, max] of [[.1, .10001], [-.10001, -.1], [999999, 999999.00001]]) {
+    assert.deepEqual(validateDomain(min, max, min, max), {
+      xmin: min, xmax: max, ymin: min, ymax: max,
+    });
+  }
+  assert.throws(() => validateDomain(.1, .100009999, -1, 1));
+});

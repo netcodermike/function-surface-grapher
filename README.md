@@ -8,7 +8,7 @@ Watch an equation become a curve or a color-shaded surface. Pan and zoom 2D plot
 
 ## Desktop edition
 
-The offline desktop edition runs from a local Electron window. [Download the Windows x64 ZIP](https://github.com/netcodermike/function-surface-grapher/releases/download/v1.0.0/FunctionAndSurfaceGrapher-win-x64.zip), extract it, and open `FunctionAndSurfaceGrapher.exe`. Keep the executable and its bundled files together.
+The offline desktop edition runs from a local Electron window. [Download the Windows x64 ZIP](https://github.com/netcodermike/function-surface-grapher/releases/download/v1.0.1/FunctionAndSurfaceGrapher-win-x64.zip), extract it, and open `FunctionAndSurfaceGrapher.exe`. Keep the executable and its bundled files together.
 
 To run the desktop edition from source with Node.js 22.12 or newer and npm:
 

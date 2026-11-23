@@ -12,6 +12,21 @@ test('clips a steep continuous curve to the visible height range', () => {
   assert.deepEqual(paths[0].at(-1), [.004, 4]);
 });
 
+test('keeps tiny signed intersections when clipping an extreme finite slope', () => {
+  const domain = validateDomain(-1, 1, -1, 1);
+  for (const slope of [1e308, -1e308]) {
+    const evaluate = x => slope * x;
+    const { paths } = sampleCurve(evaluate, domain);
+    assert.equal(paths.length, 1);
+    const [x1, y1] = paths[0][0];
+    const [x2, y2] = paths[0].at(-1);
+    assert.equal(y1, -Math.sign(slope));
+    assert.equal(y2, Math.sign(slope));
+    assert.ok(Math.abs(x1 * 1e308 + 1) < 1e-12);
+    assert.ok(Math.abs(x2 * 1e308 - 1) < 1e-12);
+  }
+});
+
 test('keeps a narrow continuous transition connected', () => {
   const domain = validateDomain(-4, 4, -2, 2);
   const { paths } = sampleCurve(compileExpression('atan(1e6*x)'), domain);
@@ -45,6 +60,15 @@ test('keeps the full smooth saddle surface mesh', () => {
   const domain = validateDomain(-3, 3, -3, 3);
   const evaluate = compileExpression('x^2-y^2', ['x', 'y']);
   assert.equal(surfaceCells(evaluate, domain, surfaceSamples(evaluate, domain)).length, 900);
+});
+
+test('samples the exact domain edges when a square root ends there', () => {
+  const domain = validateDomain(-1.23, .85, -1.23, .85);
+  const evaluate = compileExpression('sqrt(.85-x)*sqrt(.85-y)', ['x', 'y']);
+  const points = surfaceSamples(evaluate, domain);
+  assert.ok(points.every(row => row.at(-1).z === 0));
+  assert.ok(points.at(-1).every(point => point.z === 0));
+  assert.equal(surfaceCells(evaluate, domain, points).length, 900);
 });
 
 test('leaves a gap where a pole runs between finite surface samples', () => {
