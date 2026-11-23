@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Plot functions of one variable in 2D and rotate surfaces of two variables in 3D with adjustable domains.">
+  <title>Function and Surface Grapher</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<main>
+  <div class="heading">
+    <div><h1>Function and Surface Grapher</h1><p>Plot functions of one variable in 2D and rotate surfaces of two variables in 3D with adjustable domains.</p></div>
+    <a href="https://github.com/netcodermike/function-surface-grapher">Project source ↗</a>
+  </div>
+  <div class="workspace">
+    <section class="panel stage" aria-label="Project workspace">
+      <canvas id="plot" width="810" height="475" tabindex="0" role="img" aria-label="Mathematical graph">Mathematical graph</canvas><p id="reading" role="status"></p>
+    </section>
+    <section class="panel controls" aria-label="Controls">
+      <form id="controls">
+<label>Example <select id="example"><optgroup label="Surfaces"><option value="ripple">Radial ripple</option>
+<option value="saddle">Saddle</option><option value="hills">Periodic hills</option></optgroup>
+<optgroup label="Curves"><option value="sine">Harmonic curve</option><option value="cubic">Cubic</option>
+<option value="reciprocal">Reciprocal</option></optgroup></select></label>
+<label>Graph type <select id="mode"><option value="2d">2D curve · y = f(x)</option><option value="3d">3D surface · z = f(x, y)</option></select></label>
+<label>Expression <input id="formula" type="text" maxlength="256" required autocomplete="off" spellcheck="false"></label>
+
+<fieldset><legend>Plot bounds</legend>
+<div class="pair"><label>x minimum <input id="xmin" type="number" step="any" required></label>
+<label>x maximum <input id="xmax" type="number" step="any" required></label></div>
+<div class="pair"><label>y minimum <input id="ymin" type="number" step="any" required></label>
+<label>y maximum <input id="ymax" type="number" step="any" required></label></div>
+</fieldset>
+
+<button type="submit">Plot expression</button>
+<div class="actions"><button id="zoom-in" type="button">Zoom in</button>
+<button id="zoom-out" type="button">Zoom out</button></div>
+<div id="rotate-controls" class="actions"><button id="turn-left" type="button">Rotate left</button>
+<button id="turn-right" type="button">Rotate right</button></div>
+<p>Drag to pan the 2D graph or rotate the 3D surface. Write products with <code>*</code>, such as <code>2*x</code>.</p>
+<p class="error" id="error" role="alert"></p>
+</form>
+    </section>
+  </div>
+</main>
+</body>
+</html>
