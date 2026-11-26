@@ -9,7 +9,10 @@ const files = new Map([
   ['/index.html', 'text/html'],
   ['/style.css', 'text/css'],
   ['/app.mjs', 'text/javascript'],
+  ['/coordinates.mjs', 'text/javascript'],
+  ['/intersections.mjs', 'text/javascript'],
   ['/sampling.mjs', 'text/javascript'],
+  ['/surface-view.mjs', 'text/javascript'],
 ]);
 const contentPolicy = "default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'";
 

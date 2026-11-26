@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compileExpression, surfaceSamples, validateDomain } from './app.mjs';
-import { sampleCurve, surfaceCells } from './sampling.mjs';
+import { needsFinerSurface, sampleCurve, surfaceCells } from './sampling.mjs';
 
 test('clips a steep continuous curve to the visible height range', () => {
   const domain = validateDomain(-6, 6, -4, 4);
@@ -50,6 +50,28 @@ test('keeps a gap at a small off-grid pole on a wide y-axis', () => {
   assert.ok(paths[1][0][0] > .001);
 });
 
+test('breaks midpoint-lattice aliasing without leaving the visible height range', () => {
+  const domain = validateDomain(0, 1, -.5, .5);
+  const { paths } = sampleCurve(compileExpression('cos(2*pi*32*x)'), domain, 16);
+  assert.equal(paths.length, 64);
+  assert.ok(paths.every(path => path.every(([, y]) => y >= -.5 && y <= .5)));
+});
+
+test('a rough region cannot use up refinements for a clean region later in x', () => {
+  const domain = validateDomain(-1, 1, -4, 4);
+  let probes = 0;
+  const pole = .5718;
+  const { paths } = sampleCurve(x => {
+    probes++;
+    return x < 0 ? Math.sin(1e10 * x) : .000001 / (x - pole);
+  }, domain);
+  const positive = paths.filter(path => path[0][0] >= 0);
+  assert.equal(positive.length, 2);
+  assert.ok(positive[0].at(-1)[0] < pole && positive[1][0][0] > pole);
+  assert.equal(positive[1].at(-1)[0], 1);
+  assert.ok(probes < 200_000);
+});
+
 test('distinguishes undefined curves from finite curves outside the frame', () => {
   const domain = validateDomain(-1, 1, -1, 1);
   assert.deepEqual(sampleCurve(compileExpression('sqrt(-1)'), domain), { paths: [], hasFiniteSamples: false });
@@ -89,4 +111,22 @@ test('isolated finite samples do not count as a drawable surface', () => {
   const points = surfaceSamples(evaluate, domain);
   assert.equal(points.flat().filter(point => Number.isFinite(point.z)).length, 1);
   assert.deepEqual(surfaceCells(evaluate, domain, points), []);
+});
+
+test('detects aliased surfaces with deceptively constant coarse-grid corners', () => {
+  const domain = validateDomain(0, 1, -1, 1);
+  for (const expression of ['cos(60*pi*x)', 'cos(120*pi*x)']) {
+    const evaluate = compileExpression(expression, ['x', 'y']);
+    const samples = surfaceSamples(evaluate, domain);
+    assert.ok(samples.every(row => row.every(point => point.z === 1)));
+    assert.equal(needsFinerSurface(evaluate, domain, samples), true);
+  }
+});
+
+test('avoids unnecessary mesh refinement for planes and extreme finite scales', () => {
+  const domain = validateDomain(-1, 1, -1, 1);
+  for (const expression of ['3*x-y+7', '1e308*x', '1e-120*x', '7']) {
+    const evaluate = compileExpression(expression, ['x', 'y']);
+    assert.equal(needsFinerSurface(evaluate, domain, surfaceSamples(evaluate, domain)), false);
+  }
 });

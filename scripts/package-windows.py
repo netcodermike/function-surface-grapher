@@ -26,7 +26,10 @@ APP_FILES = (
     "index.html",
     "style.css",
     "app.mjs",
+    "coordinates.mjs",
+    "intersections.mjs",
     "sampling.mjs",
+    "surface-view.mjs",
 )
 
 

@@ -1,0 +1,104 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { findCurveIntersections, findSurfaceIntersections } from './intersections.mjs';
+import { gridCoordinate, sampleCurve, surfaceCells } from './sampling.mjs';
+
+const flatDomain = { xmin: -2, xmax: 2, ymin: -2, ymax: 2 };
+
+function compareCurves(a, b, domain = flatDomain) {
+  const series = [a, b].map((evaluate, index) => ({ index, evaluate, ...sampleCurve(evaluate, domain) }));
+  return findCurveIntersections(series, domain);
+}
+
+function compareSurfaces(a, b, domain = flatDomain, steps = 10) {
+  const series = [a, b].map((evaluate, index) => {
+    const samples = Array.from({length: steps + 1}, (_, row) =>
+      Array.from({length: steps + 1}, (_, col) => {
+        const x = gridCoordinate(domain.xmin, domain.xmax, col, steps);
+        const y = gridCoordinate(domain.ymin, domain.ymax, row, steps);
+        return { z: evaluate(x, y) };
+      }));
+    return { index, samples, cells: surfaceCells(evaluate, domain, samples) };
+  });
+  return findSurfaceIntersections(series, domain);
+}
+
+test('finds both true crossings and deduplicates roots on sample boundaries', () => {
+  const { points, overlaps } = compareCurves(x => x ** 2, () => 1);
+  assert.equal(points.length, 2);
+  assert.equal(overlaps.length, 0);
+  for (const [i, x] of [-1, 1].entries()) {
+    assert.ok(Math.abs(points[i].x - x) < 1e-11);
+    assert.ok(Math.abs(points[i].y - 1) < 1e-11);
+    assert.deepEqual(points[i].pair, [0, 1]);
+  }
+});
+
+test('reports off-grid tangent contacts and rejects close curves that never touch', () => {
+  const tangent = .1234567;
+  const { points } = compareCurves(x => (x - tangent) ** 2, () => 0);
+  assert.equal(points.length, 1);
+  assert.ok(Math.abs(points[0].x - tangent) < 1e-9);
+  assert.ok(points[0].y < 1e-18);
+  assert.deepEqual(compareCurves(x => 1e-10 + (x - tangent) ** 2, () => 0).points, []);
+});
+
+test('does not turn poles, jumps, or a removed root into intersection markers', () => {
+  const singular = .1234567;
+  for (const evaluate of [
+    x => 1 / (x - singular),
+    x => x < singular ? -1 : 1,
+    x => (x - singular) ** 2 / (x - singular),
+  ]) {
+    assert.deepEqual(compareCurves(evaluate, () => 0).points, []);
+  }
+});
+
+test('represents both whole and partial curve overlap as runs without point floods', () => {
+  const whole = compareCurves(x => Math.sin(x) ** 2 + Math.cos(x) ** 2, () => 1);
+  assert.deepEqual(whole.overlaps, [[0, 1]]);
+  assert.deepEqual(whole.points, []);
+  assert.equal(whole.overlapPaths.length, 1);
+  const partial = compareCurves(Math.abs, x => x);
+  assert.deepEqual(partial.overlaps, [[0, 1]]);
+  assert.equal(partial.overlapPaths.length, 1);
+  assert.equal(partial.overlapPaths[0].points[0].x, 0);
+  assert.equal(partial.overlapPaths[0].points.at(-1).x, 2);
+  assert.deepEqual(partial.points, []);
+});
+
+test('traces surface intersections in domain coordinates rather than normalized coordinates', () => {
+  const domain = { xmin: 20, xmax: 22, ymin: -4, ymax: -2 };
+  const { segments, points, overlaps } = compareSurfaces((x, y) => x + y, x => x - 3.1, domain);
+  assert.ok(segments.length >= 10);
+  assert.deepEqual(points, []);
+  assert.deepEqual(overlaps, []);
+  for (const { pair, points: endpoints } of segments) {
+    assert.deepEqual(pair, [0, 1]);
+    for (const [x, y, z] of endpoints) {
+      assert.ok(x >= 20 && x <= 22);
+      assert.ok(Math.abs(y + 3.1) < 1e-12);
+      assert.ok(Math.abs(z - (x + y)) < 1e-12);
+    }
+  }
+});
+
+test('renders each shared contour edge only once and includes point tangencies', () => {
+  const edge = compareSurfaces(x => x, () => 0);
+  assert.equal(edge.segments.length, 10);
+  assert.ok(edge.segments.every(segment => segment.points.every(([x, , z]) => x === 0 && z === 0)));
+  const contact = compareSurfaces((x, y) => x * x + y * y, () => 0);
+  assert.deepEqual(contact.segments, []);
+  assert.deepEqual(contact.points, [{ pair: [0, 1], point: [0, 0, 0] }]);
+});
+
+test('does not invent intersections across rejected surface cells', () => {
+  const result = compareSurfaces(x => 1 / (x - .15), () => 0);
+  assert.deepEqual(result.segments, []);
+  assert.deepEqual(result.points, []);
+});
+
+test('reports coincident surfaces without outlining every facet', () => {
+  const result = compareSurfaces((x, y) => x + y, (x, y) => y + x);
+  assert.deepEqual(result, { segments: [], overlaps: [[0, 1]], points: [] });
+});

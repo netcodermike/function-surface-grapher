@@ -1,7 +1,7 @@
 {
   "name": "function-surface-grapher",
   "productName": "Function and Surface Grapher",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "description": "Plot and explore 2D functions and 3D surfaces with JavaScript and HTML Canvas.",
   "main": "electron/main.cjs",
