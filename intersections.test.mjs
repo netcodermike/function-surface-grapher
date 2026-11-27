@@ -34,6 +34,40 @@ test('finds both true crossings and deduplicates roots on sample boundaries', ()
   }
 });
 
+test('finds all 65 intersections in the reported oscillating graph', () => {
+  const domain = { xmin: 0, xmax: 100, ymin: 0, ymax: 2 };
+  const wave = x => Math.sin(x) ** 2;
+  const { points, limited } = compareCurves(wave, x => x / 100, domain);
+  assert.equal(limited, false);
+  assert.equal(points.length, 65);
+  assert.equal(points[0].x, 0);
+  assert.ok(Math.abs(points[1].x - .0100003333622255) < 1e-13);
+  assert.ok(Math.abs(points.at(-1).x - 99.0574088924818) < 1e-11);
+  for (const [i, point] of points.entries()) {
+    assert.ok(Math.abs(wave(point.x) - point.x / 100) < 2e-14);
+    if (i) assert.ok(point.x - points[i - 1].x > .001);
+  }
+});
+
+test('finds two close crossings within a grid interval', () => {
+  const domain = { xmin: 0, xmax: 1, ymin: -1, ymax: 1 };
+  for (const [a, b] of [[0, .00001], [.50001, .50002]]) {
+    const { points } = compareCurves(x => (x - a) * (x - b), () => 0, domain);
+    assert.equal(points.length, 2);
+    assert.ok(Math.abs(points[0].x - a) < 1e-12);
+    assert.ok(Math.abs(points[1].x - b) < 1e-12);
+  }
+});
+
+test('preserves smooth turns so all in-view tangent contacts can be found', () => {
+  const domain = { xmin: 0, xmax: 100, ymin: 0, ymax: 2 };
+  const wave = x => Math.sin(x) ** 2;
+  assert.equal(sampleCurve(wave, domain).paths.length, 1);
+  const { points } = compareCurves(wave, () => 1, domain);
+  assert.equal(points.length, 32);
+  points.forEach((point, i) => assert.ok(Math.abs(point.x - (i + .5) * Math.PI) < 1e-6));
+});
+
 test('reports off-grid tangent contacts and rejects close curves that never touch', () => {
   const tangent = .1234567;
   const { points } = compareCurves(x => (x - tangent) ** 2, () => 0);

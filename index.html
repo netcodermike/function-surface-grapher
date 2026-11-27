@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Plot and compare functions in 2D or surfaces in 3D, inspect coordinates, and find their intersections.">
   <title>Function and Surface Grapher</title>
-  <link rel="stylesheet" href="./style.css?v=1.1.0">
-  <script type="module" src="./app.mjs?v=1.1.0"></script>
+  <link rel="stylesheet" href="./style.css?v=1.1.1">
+  <script type="module" src="./app.mjs?v=1.1.1"></script>
 </head>
 <body>
 <main>
@@ -38,6 +38,7 @@
           <label class="check"><input id="show-intersections" type="checkbox" checked> Highlight on graph</label>
         </div>
         <p id="intersection-summary"></p>
+        <button id="toggle-solutions" type="button" aria-controls="solution-points" aria-expanded="false" hidden>Show all intersections</button>
         <ul id="solution-points"></ul>
       </section>
     </section>
