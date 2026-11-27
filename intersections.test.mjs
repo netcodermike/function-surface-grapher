@@ -18,7 +18,7 @@ function compareSurfaces(a, b, domain = flatDomain, steps = 10) {
         const y = gridCoordinate(domain.ymin, domain.ymax, row, steps);
         return { z: evaluate(x, y) };
       }));
-    return { index, samples, cells: surfaceCells(evaluate, domain, samples) };
+    return { index, evaluate, samples, cells: surfaceCells(evaluate, domain, samples) };
   });
   return findSurfaceIntersections(series, domain);
 }
@@ -130,6 +130,46 @@ test('does not invent intersections across rejected surface cells', () => {
   const result = compareSurfaces(x => 1 / (x - .15), () => 0);
   assert.deepEqual(result.segments, []);
   assert.deepEqual(result.points, []);
+});
+
+test('finds all six off-grid peaks touched by the z = 1 plane without inventing near misses', () => {
+  const domain = { xmin: -6, xmax: 6, ymin: -6, ymax: 6 };
+  const wave = (x, y) => Math.cos(x) * Math.sin(y);
+  const { segments, points, overlaps } = compareSurfaces(wave, () => 1, domain, 30);
+  assert.deepEqual(segments, []);
+  assert.deepEqual(overlaps, []);
+  assert.equal(points.length, 6);
+  for (const [x, y] of [[0, -1.5], [0, .5], [-1, -.5], [-1, 1.5], [1, -.5], [1, 1.5]]) {
+    const contact = points.find(({ point }) => Math.hypot(point[0] - x * Math.PI, point[1] - y * Math.PI) < 1e-7);
+    assert.ok(contact, `Missing peak at (${x}π, ${y}π)`);
+    assert.ok(Math.abs(contact.point[2] - 1) < 1e-14);
+    assert.ok(Math.abs(wave(...contact.point) - 1) < 1e-14);
+  }
+  for (const height of [1 + 1e-10, 1 - 1e-10, .99]) {
+    assert.deepEqual(compareSurfaces(wave, () => height, domain, 30).points, []);
+  }
+  assert.ok(compareSurfaces(wave, () => .99, domain, 30).segments.length > 0);
+});
+
+test('finds zero-height off-grid contacts and does not label a tilted ridge as isolated points', () => {
+  const a = .1234567, b = -.2718281;
+  for (const tangent of [
+    (x, y) => (x - a) ** 2 + 2 * (y - b) ** 2,
+    (x, y) => (x - a + 2 * (y - b)) ** 2 + .01 * (y - b) ** 2,
+  ]) {
+    const { points } = compareSurfaces(tangent, () => 0);
+    assert.equal(points.length, 1);
+    assert.ok(Math.hypot(points[0].point[0] - a, points[0].point[1] - b) < 1e-10);
+    assert.deepEqual(compareSurfaces((x, y) => tangent(x, y) + 1e-12, () => 0).points, []);
+  }
+  assert.deepEqual(compareSurfaces((x, y) => (x - 2 * y + .3) ** 2, () => 0).points, []);
+});
+
+test('keeps an isolated surface contact alongside contours for the same expression pair', () => {
+  const tangent = (x, y) => ((x - .1234567) ** 2 + (y + .2718281) ** 2) * (x + 1.03);
+  const { points, segments } = compareSurfaces(tangent, () => 0, flatDomain, 30);
+  assert.equal(points.length, 1);
+  assert.ok(segments.length > 0);
 });
 
 test('reports coincident surfaces without outlining every facet', () => {
