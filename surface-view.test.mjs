@@ -100,6 +100,18 @@ test('visible-triangle picking handles overlapping surfaces in paint order', () 
   assert.equal(new Set(view.fills).size, 2);
 });
 
+test('the first surface keeps its blue-to-purple height ramp when adding other surfaces', () => {
+  const first = buildSeries(0, x => x);
+  const single = new Set(draw([first]).fills);
+  assert.ok(single.has('hsl(202.875 69% 50%)'));
+  assert.ok(single.has('hsl(268.125 69% 50%)'));
+
+  const comparison = new Set(draw([first, buildSeries(1, () => 0),
+    buildSeries(2, () => 0), buildSeries(3, () => 0)]).fills);
+  for (const fill of single) assert.ok(comparison.has(fill));
+  assert.equal(comparison.size, single.size + 3);
+});
+
 test('equal units project equal world lengths under the same foreshortening', () => {
   const domain = {xmin: -20, xmax: 20, ymin: -3, ymax: 3};
   const series = [buildSeries(0, (x, y) => 3 * y, domain)];
